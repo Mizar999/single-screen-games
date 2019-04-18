@@ -1,6 +1,6 @@
 # Single Screen Games
 
-Work in progress
+A selection of single screen games.
 
 ## Links
 
