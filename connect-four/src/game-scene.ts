@@ -28,7 +28,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
-        this.load.setBaseURL("../../../assets/");
+        this.load.setBaseURL("../assets/");
         this.load.image("tiles", "hack_square_64x64.png");
     }
 
