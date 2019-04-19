@@ -1,10 +1,12 @@
 import "phaser";
+import { GameScene } from "./game-scene";
 
 const config: GameConfig = {
     title: "Connect Four",
     width: 800,
     height: 600,
     parent: "game",
+    scene: [GameScene],
     backgroundColor: "#999999"
 }
 
