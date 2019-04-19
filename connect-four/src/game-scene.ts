@@ -5,7 +5,6 @@ export class GameScene extends Phaser.Scene {
     private map: Phaser.Tilemaps.Tilemap;
     private boardLayer: Phaser.Tilemaps.DynamicTilemapLayer;
     private layerScale: number;
-    private timeEvent: Phaser.Time.TimerEvent;
 
     private emptyTile: number;
     private borderTile: number;
@@ -47,12 +46,16 @@ export class GameScene extends Phaser.Scene {
         this.boardLayer.fill(this.emptyTile, x + 1, y, 7, 7);
         this.boardLayer.putTileAt(this.cursor.tileIndex, this.cursor.x, this.cursor.y);
 
-        this.timeEvent = this.time.addEvent({
-            delay: 1500,
+        this.time.addEvent({
+            delay: 1000,
             callback: () => {
-                this.boardLayer.removeTileAt(this.cursor.x, this.cursor.y);
-                this.cursor.x += 2;
-                this.boardLayer.putTileAt(this.cursor.tileIndex, this.cursor.x, this.cursor.y);
+                if (!this.cursor.isMoving) {
+                    this.cursor.isMoving = true;
+                    this.moveTile("board", this.cursor.x, this.cursor.y, 1, 0, 300, () => {
+                        this.cursor.x += 1;
+                        this.cursor.isMoving = false;
+                    });
+                }
             },
             callbackScope: this,
             loop: true
@@ -61,5 +64,31 @@ export class GameScene extends Phaser.Scene {
 
     update(time: number, delta: number): void {
         // TODO
+    }
+
+    private moveTile(layerName: string, x: number, y: number, dirX: number, dirY: number, duration: number = 1, complete?: () => void): void {
+        let currentLayerName = this.map.getLayer().name;
+        this.map.setLayer(layerName);
+
+        let tile = this.map.getTileAt(x, y);
+        if (tile && tile.index >= 0) {
+            let destination = new Phaser.Geom.Point((x + dirX) * tile.width, (y + dirY) * tile.height);
+            this.add.tween({
+                targets: tile,
+                pixelX: destination.x,
+                pixelY: destination.y,
+                duration: duration,
+                ease: "Power2",
+                onComplete: () => {
+                    this.map.removeTileAt(x, y);
+                    this.map.putTileAt(tile.index, x + dirX, y + dirY);
+                    if (complete) {
+                        complete();
+                    }
+                }
+            });
+        }
+
+        this.map.setLayer(currentLayerName);
     }
 }
