@@ -61,6 +61,7 @@ export class GameScene extends Phaser.Scene {
         this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
             if (this.isValidCursorPosition(position.x)) {
+                this.moveCursorTo(position.x);
                 this.dropToken(position.x, this.tokenData.fallDuration);
             }
         }, this);
