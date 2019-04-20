@@ -1,6 +1,7 @@
 import "phaser";
 import { BoardCursor } from "./board-cursor";
 import { TokenData } from "./token-data";
+import { PlayerData } from "./player-data";
 
 export class GameScene extends Phaser.Scene {
     private map: Phaser.Tilemaps.Tilemap;
@@ -16,6 +17,8 @@ export class GameScene extends Phaser.Scene {
     private cursor: BoardCursor;
     private tokens: [[{ player: number }?]?];
     private tokenData: TokenData;
+    private players: PlayerData;
+    private winnerTint: number;
 
     constructor() {
         super({
@@ -29,6 +32,7 @@ export class GameScene extends Phaser.Scene {
         this.borderTile = 35;
         this.tokenTile = 7;
         this.boardRect = new Phaser.Geom.Rectangle(3, 5, 7, 7);
+        this.winnerTint = 0x4ac38b;
     }
 
     preload(): void {
@@ -48,6 +52,7 @@ export class GameScene extends Phaser.Scene {
         this.boardLayer.fill(this.borderTile, this.boardRect.x - 1, this.boardRect.y, this.boardRect.width + 2, this.boardRect.height + 1);
         this.boardLayer.fill(this.emptyTile, this.boardRect.x, this.boardRect.y, this.boardRect.width, this.boardRect.height);
 
+        this.players = new PlayerData();
         this.initializeCursor();
         this.initializeTokens();
 
@@ -58,10 +63,16 @@ export class GameScene extends Phaser.Scene {
             }
         }, this);
 
-        this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
+        this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
             if (this.isValidCursorPosition(position.x)) {
                 this.moveCursorTo(position.x);
+            }
+        }, this);
+
+        this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
+            let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
+            if (this.isValidCursorPosition(position.x)) {
                 this.dropToken(position.x, this.tokenData.fallDuration);
             }
         }, this);
@@ -117,6 +128,7 @@ export class GameScene extends Phaser.Scene {
             this.tokenData.isMoving = true;
             let y = this.cursor.y + 1;
             let tokenX = x - this.boardRect.x;
+            // Calculate how far the token can fall
             let dirY: number;
             for (dirY = this.boardRect.height - 1; dirY >= 0; --dirY) {
                 if (this.tokens[tokenX][dirY].player === 0) {
@@ -125,15 +137,117 @@ export class GameScene extends Phaser.Scene {
             }
 
             if (dirY >= 0) {
-                this.tokenLayer.putTileAt(this.tokenTile, x, y);
+                let tile = this.tokenLayer.putTileAt(this.tokenTile, x, y);
+                tile.tint = this.players.getTint();
                 this.moveTile(this.tokenLayer, x, y, 0, dirY, duration, () => {
-                    this.tokens[tokenX][dirY].player = 1;
-                    this.tokenData.isMoving = false;
+                    this.tokens[tokenX][dirY].player = this.players.getActivePlayer();
+                    if (!this.activePlayerHasWon()) {
+                        this.players.nextPlayer();
+                        this.tokenData.isMoving = false;
+                    }
                 });
             } else {
                 this.tokenData.isMoving = false;
             }
         }
+    }
+
+    private activePlayerHasWon(): boolean {
+        let result: { hasWon: boolean, positions: Phaser.Geom.Point[] };
+        let step = 0;
+        do {
+            switch (step) {
+                case 0:
+                    result = this.checkHorizontal();
+                    break;
+                case 1:
+                    result = this.checkVertical();
+                    break;
+                case 2:
+                    result = this.checkDiagonal();
+                    break;
+            }
+            step += 1;
+        } while (!result.hasWon && step < 3);
+
+
+        if (result.hasWon) {
+            let tile: Phaser.Tilemaps.Tile;
+            let tilePosition = new Phaser.Geom.Point();
+            for (let index = 0; index < result.positions.length; ++index) {
+                tilePosition.x = this.boardRect.x + result.positions[index].x;
+                tilePosition.y = this.boardRect.y + result.positions[index].y;
+                tile = this.tokenLayer.getTileAt(tilePosition.x, tilePosition.y)
+                tile.tint = this.winnerTint;
+            }
+        }
+
+        return result.hasWon;
+    }
+
+    private checkHorizontal(): { hasWon: boolean, positions: Phaser.Geom.Point[] } {
+        let positions: Phaser.Geom.Point[] = [];
+        for (let i = 0; i < 4; ++i) {
+            positions.push(new Phaser.Geom.Point());
+        }
+
+        let activePlayer = this.players.getActivePlayer();
+        let count = 0;
+        let hasWon = false;
+        for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
+            for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
+                if (this.tokens[x][y].player === activePlayer) {
+                    positions[count].x = x;
+                    positions[count].y = y;
+                    count += 1;
+                    hasWon = count == 4;
+                } else {
+                    count = 0;
+                }
+            }
+        }
+
+        return { hasWon: hasWon, positions: positions };
+    }
+
+    private checkVertical(): { hasWon: boolean, positions: Phaser.Geom.Point[] } {
+        let positions: Phaser.Geom.Point[] = [];
+        for (let i = 0; i < 4; ++i) {
+            positions.push(new Phaser.Geom.Point());
+        }
+
+        let activePlayer = this.players.getActivePlayer();
+        let count = 0;
+        let hasWon = false;
+        for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
+            for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
+                if (this.tokens[x][y].player === activePlayer) {
+                    positions[count].x = x;
+                    positions[count].y = y;
+                    count += 1;
+                    hasWon = count == 4;
+                } else {
+                    count = 0;
+                }
+            }
+        }
+
+        return { hasWon: hasWon, positions: positions };
+    }
+
+    private checkDiagonal(): { hasWon: boolean, positions: Phaser.Geom.Point[] } {
+        let positions: Phaser.Geom.Point[] = [];
+        for (let i = 0; i < 4; ++i) {
+            positions.push(new Phaser.Geom.Point());
+        }
+
+        let activePlayer = this.players.getActivePlayer();
+        let count = 0;
+        let hasWon = false;
+        
+        // TODO
+
+        return { hasWon: hasWon, positions: positions };
     }
 
     private moveTile(layer: Phaser.Tilemaps.DynamicTilemapLayer, x: number, y: number, dirX: number, dirY: number, duration: number = 1, complete?: () => void): void {
