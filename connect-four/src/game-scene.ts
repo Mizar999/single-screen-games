@@ -191,20 +191,16 @@ export class GameScene extends Phaser.Scene {
             positions.push(new Phaser.Geom.Point());
         }
 
-        let activePlayer = this.players.getActivePlayer();
-        let count: number;
         let hasWon = false;
+        let count: number;
+        let result: { hasWon: boolean, position: Phaser.Geom.Point, count: number };
         for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
             count = 0;
             for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
-                if (this.tokens[x][y].player === activePlayer) {
-                    positions[count].x = x;
-                    positions[count].y = y;
-                    count += 1;
-                    hasWon = count == 4;
-                } else {
-                    count = 0;
-                }
+                result = this.checkWinningToken(x, y, count);
+                positions[count] = result.position;
+                count = result.count;
+                hasWon = result.hasWon;
             }
         }
 
@@ -217,20 +213,16 @@ export class GameScene extends Phaser.Scene {
             positions.push(new Phaser.Geom.Point());
         }
 
-        let activePlayer = this.players.getActivePlayer();
-        let count: number;
         let hasWon = false;
+        let count: number;
+        let result: { hasWon: boolean, position: Phaser.Geom.Point, count: number };
         for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
             count = 0;
             for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
-                if (this.tokens[x][y].player === activePlayer) {
-                    positions[count].x = x;
-                    positions[count].y = y;
-                    count += 1;
-                    hasWon = count == 4;
-                } else {
-                    count = 0;
-                }
+                result = this.checkWinningToken(x, y, count);
+                positions[count] = result.position;
+                count = result.count;
+                hasWon = result.hasWon;
             }
         }
 
@@ -244,12 +236,65 @@ export class GameScene extends Phaser.Scene {
         }
 
         let activePlayer = this.players.getActivePlayer();
-        let count = 0;
         let hasWon = false;
-        
-        // TODO
+        let count: number;
+        let result: { hasWon: boolean, position: Phaser.Geom.Point, count: number };
+        let currentX: number;
+        let currentY: number;
+        for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
+            count = 0;
+            currentX = x;
+            for (let y = 0; currentX < this.boardRect.width && y < this.boardRect.height && !hasWon; ++currentX, ++y) {
+                result = this.checkWinningToken(currentX, y, count);
+                positions[count] = result.position;
+                count = result.count;
+                hasWon = result.hasWon;
+            }
+
+            count = 0;
+            currentX = this.boardRect.width - x - 1;
+            for (let y = 0; currentX >= 0 && y < this.boardRect.height && !hasWon; --currentX, ++y) {
+                result = this.checkWinningToken(currentX, y, count);
+                positions[count] = result.position;
+                count = result.count;
+                hasWon = result.hasWon;
+            }
+        }
+
+        for (let y = 1; y < this.boardRect.height && !hasWon; ++y) {
+            count = 0;
+            currentY = y;
+            for (let x = 0; currentY < this.boardRect.height && x < this.boardRect.width && !hasWon; ++currentY, ++x) {
+                result = this.checkWinningToken(x, currentY, count);
+                positions[count] = result.position;
+                count = result.count;
+                hasWon = result.hasWon;
+            }
+
+            count = 0;
+            currentY = y;
+            for (let x = this.boardRect.width - 1; currentY < this.boardRect.height && x >= 0 && !hasWon; ++currentY, --x) {
+                result = this.checkWinningToken(x, currentY, count);
+                positions[count] = result.position;
+                count = result.count;
+                hasWon = result.hasWon;
+            }
+        }
 
         return { hasWon: hasWon, positions: positions };
+    }
+
+    private checkWinningToken(x: number, y: number, count: number): { hasWon: boolean, position: Phaser.Geom.Point, count: number } {
+        let position = new Phaser.Geom.Point();
+        if (this.tokens[x][y].player === this.players.getActivePlayer()) {
+            position.x = x;
+            position.y = y;
+            count += 1;
+        } else {
+            count = 0;
+        }
+
+        return { hasWon: count == 4, position: position, count: count };
     }
 
     private moveTile(layer: Phaser.Tilemaps.DynamicTilemapLayer, x: number, y: number, dirX: number, dirY: number, duration: number = 1, complete?: () => void): void {
