@@ -192,9 +192,10 @@ export class GameScene extends Phaser.Scene {
         }
 
         let activePlayer = this.players.getActivePlayer();
-        let count = 0;
+        let count: number;
         let hasWon = false;
         for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
+            count = 0;
             for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
                 if (this.tokens[x][y].player === activePlayer) {
                     positions[count].x = x;
@@ -217,9 +218,10 @@ export class GameScene extends Phaser.Scene {
         }
 
         let activePlayer = this.players.getActivePlayer();
-        let count = 0;
+        let count: number;
         let hasWon = false;
         for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
+            count = 0;
             for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
                 if (this.tokens[x][y].player === activePlayer) {
                     positions[count].x = x;
