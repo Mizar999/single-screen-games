@@ -37,12 +37,12 @@ export class GameScene extends Phaser.Scene {
 
     preload(): void {
         this.load.setBaseURL("../assets/");
-        this.load.image("tiles", "hack_square_64x64.png");
+        this.load.image("tiles-extruded", "hack_square_64x64_extruded.png");
     }
 
     create(): void {
         this.map = this.make.tilemap({ tileWidth: 64, tileHeight: 64, width: 20, height: 15 });
-        let tileset = this.map.addTilesetImage("tiles");
+        let tileset = this.map.addTilesetImage("tiles", "tiles-extruded", 64, 64, 1, 2);
 
         this.boardLayer = this.map.createBlankDynamicLayer("board", tileset);
         this.boardLayer.setScale(this.layerScale);
