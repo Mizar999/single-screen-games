@@ -14,6 +14,7 @@ export class GameScene extends Phaser.Scene {
     private tokenTile: number;
 
     private boardRect: Phaser.Geom.Rectangle;
+    private borderTiles: Phaser.Tilemaps.Tile[];
     private cursor: BoardCursor;
     private tokens: [[{ player: number }?]?];
     private tokenData: TokenData;
@@ -49,12 +50,13 @@ export class GameScene extends Phaser.Scene {
         this.tokenLayer = this.map.createBlankDynamicLayer("token", tileset);
         this.tokenLayer.setScale(this.layerScale);
 
-        this.boardLayer.fill(this.borderTile, this.boardRect.x - 1, this.boardRect.y, this.boardRect.width + 2, this.boardRect.height + 1);
         this.boardLayer.fill(this.emptyTile, this.boardRect.x, this.boardRect.y, this.boardRect.width, this.boardRect.height);
 
         this.players = new PlayerData();
         this.initializeCursor();
         this.initializeTokens();
+        this.initializeBorder();
+        this.changeBorderColor();
 
         this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
@@ -108,6 +110,20 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
+    private initializeBorder(): void {
+        this.borderTiles = [];
+        let left = this.boardRect.x - 1;
+        let right = this.boardRect.x + this.boardRect.width;
+        let bottom = this.boardRect.y + this.boardRect.height;
+        for (let y = this.boardRect.y; y < bottom; ++y) {
+            this.borderTiles.push(this.boardLayer.putTileAt(this.borderTile, left, y));
+            this.borderTiles.push(this.boardLayer.putTileAt(this.borderTile, right, y));
+        }
+        for (let x = left; x < right + 1; ++x) {
+            this.borderTiles.push(this.boardLayer.putTileAt(this.borderTile, x, bottom));
+        }
+    }
+
     private isValidCursorPosition(x: number): boolean {
         return x >= this.cursor.minX && x <= this.cursor.maxX;
     }
@@ -143,6 +159,7 @@ export class GameScene extends Phaser.Scene {
                     this.tokens[tokenX][dirY].player = this.players.getActivePlayer();
                     if (!this.activePlayerHasWon()) {
                         this.players.nextPlayer();
+                        this.changeBorderColor(700);
                         this.tokenData.isMoving = false;
                     }
                 });
@@ -150,6 +167,28 @@ export class GameScene extends Phaser.Scene {
                 this.tokenData.isMoving = false;
             }
         }
+    }
+
+    private changeBorderColor(duration: number = 1): void {
+        let fromColor = Phaser.Display.Color.IntegerToColor(0xffffff);
+        let toColor = Phaser.Display.Color.IntegerToColor(this.players.getTint());
+        this.tweens.addCounter({
+            from: 0,
+            to: 100,
+            duration: duration,
+            onUpdate: (tween: Phaser.Tweens.Tween) => {
+                let tint = Phaser.Display.Color.Interpolate.ColorWithColor(
+                    fromColor,
+                    toColor,
+                    100,
+                    tween.getValue()
+                );
+                let tintColor = Phaser.Display.Color.ObjectToColor(tint).color;
+                for (let index = 0; index < this.borderTiles.length; ++index) {
+                    this.borderTiles[index].tint = tintColor;
+                }
+            }
+        });
     }
 
     private activePlayerHasWon(): boolean {
