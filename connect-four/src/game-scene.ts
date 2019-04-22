@@ -20,6 +20,7 @@ export class GameScene extends Phaser.Scene {
     private tokenData: TokenData;
     private players: PlayerData;
     private winnerTint: number;
+    private changeBorderColorDuration: number;
 
     constructor() {
         super({
@@ -34,6 +35,7 @@ export class GameScene extends Phaser.Scene {
         this.tokenTile = 7;
         this.boardRect = new Phaser.Geom.Rectangle(3, 5, 7, 7);
         this.winnerTint = 0x4ac38b;
+        this.changeBorderColorDuration = 700;
     }
 
     preload(): void {
@@ -56,7 +58,7 @@ export class GameScene extends Phaser.Scene {
         this.initializeCursor();
         this.initializeTokens();
         this.initializeBorder();
-        this.changeBorderColor();
+        this.changeBorderColor(this.changeBorderColorDuration);
 
         this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
@@ -159,7 +161,7 @@ export class GameScene extends Phaser.Scene {
                     this.tokens[tokenX][dirY].player = this.players.getActivePlayer();
                     if (!this.activePlayerHasWon()) {
                         this.players.nextPlayer();
-                        this.changeBorderColor(700);
+                        this.changeBorderColor(this.changeBorderColorDuration);
                         this.tokenData.isMoving = false;
                     }
                 });
