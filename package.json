@@ -23,15 +23,15 @@
     "live-server": "^1.2.1",
     "minimist": ">=1.2.3",
     "npm-run-all": "^4.1.5",
-    "phaser": "^3.16.2",
+    "phaser": "^3.51.0",
     "serialize-javascript": "^4.0.0",
-    "set-value": ">=2.0.1",
+    "set-value": "^3.0.2",
     "ts-loader": "^6.2.2",
-    "typescript": "^3.4.3",
-    "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.11"
+    "typescript": "^3.9.7",
+    "webpack": "^5.13.0",
+    "webpack-cli": "^3.3.12"
   },
   "dependencies": {
-    "tile-extruder": "^2.0.5"
+    "tile-extruder": "^2.0.6"
   }
 }
