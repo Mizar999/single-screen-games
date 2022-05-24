@@ -9,8 +9,8 @@ A selection of single screen games.
 ```powershell
 git clone https://github.com/Mizar999/single-screen-games.git
 cd .\single-screen-games\
-npm install --save
-npx run-p s-root w-cfour
+npm install
+npx concurrently npm:s-root npm:w-cfour
 ```
 
 - See `./package.json` for additional **scripts**

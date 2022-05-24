@@ -1,7 +1,7 @@
-import "phaser";
 import { GameScene } from "./game-scene";
+import {Types, Game} from "phaser";
 
-const config: GameConfig = {
+const config: Types.Core.GameConfig = {
     title: "Connect Four",
     width: 800,
     height: 600,
@@ -10,8 +10,8 @@ const config: GameConfig = {
     backgroundColor: "#999999"
 }
 
-export class ConnectFourGame extends Phaser.Game {
-    constructor(config: GameConfig) {
+export class ConnectFourGame extends Game {
+    constructor(config: Types.Core.GameConfig) {
         super(config);
     }
 }

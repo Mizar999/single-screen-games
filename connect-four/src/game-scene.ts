@@ -1,20 +1,20 @@
-import "phaser";
 import { BoardCursor } from "./board-cursor";
 import { TokenData } from "./token-data";
 import { PlayerData } from "./player-data";
+import {Display, Geom, Input, Scene, Tilemaps, Tweens} from "phaser";
 
-export class GameScene extends Phaser.Scene {
-    private map: Phaser.Tilemaps.Tilemap;
-    private boardLayer: Phaser.Tilemaps.DynamicTilemapLayer;
-    private tokenLayer: Phaser.Tilemaps.DynamicTilemapLayer;
+export class GameScene extends Scene {
+    private map: Tilemaps.Tilemap;
+    private boardLayer: Tilemaps.TilemapLayer;
+    private tokenLayer: Tilemaps.TilemapLayer;
     private layerScale: number;
 
     private emptyTile: number;
     private borderTile: number;
     private tokenTile: number;
 
-    private boardRect: Phaser.Geom.Rectangle;
-    private borderTiles: Phaser.Tilemaps.Tile[];
+    private boardRect: Geom.Rectangle;
+    private borderTiles: Tilemaps.Tile[];
     private cursor: BoardCursor;
     private tokens: [[{ player: number }?]?];
     private tokenData: TokenData;
@@ -33,7 +33,7 @@ export class GameScene extends Phaser.Scene {
         this.emptyTile = 249;
         this.borderTile = 35;
         this.tokenTile = 7;
-        this.boardRect = new Phaser.Geom.Rectangle(3, 5, 7, 7);
+        this.boardRect = new Geom.Rectangle(3, 5, 7, 7);
         this.winnerTint = 0x4ac38b;
         this.changeBorderColorDuration = 700;
     }
@@ -47,9 +47,9 @@ export class GameScene extends Phaser.Scene {
         this.map = this.make.tilemap({ tileWidth: 64, tileHeight: 64, width: 20, height: 15 });
         let tileset = this.map.addTilesetImage("tiles", "tiles-extruded", 64, 64, 1, 2);
 
-        this.boardLayer = this.map.createBlankDynamicLayer("board", tileset);
+        this.boardLayer = this.map.createBlankLayer("board", tileset);
         this.boardLayer.setScale(this.layerScale);
-        this.tokenLayer = this.map.createBlankDynamicLayer("token", tileset);
+        this.tokenLayer = this.map.createBlankLayer("token", tileset);
         this.tokenLayer.setScale(this.layerScale);
 
         this.boardLayer.fill(this.emptyTile, this.boardRect.x, this.boardRect.y, this.boardRect.width, this.boardRect.height);
@@ -60,21 +60,21 @@ export class GameScene extends Phaser.Scene {
         this.initializeBorder();
         this.changeBorderColor(this.changeBorderColorDuration);
 
-        this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+        this.input.on("pointermove", (pointer: Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
             if (this.isValidCursorPosition(position.x)) {
                 this.moveCursorTo(position.x);
             }
         }, this);
 
-        this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        this.input.on("pointerdown", (pointer: Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
             if (this.isValidCursorPosition(position.x)) {
                 this.moveCursorTo(position.x);
             }
         }, this);
 
-        this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
+        this.input.on("pointerup", (pointer: Input.Pointer) => {
             let position = this.boardLayer.worldToTileXY(pointer.worldX, pointer.worldY);
             if (this.isValidCursorPosition(position.x)) {
                 this.dropToken(position.x, this.tokenData.fallDuration);
@@ -172,20 +172,20 @@ export class GameScene extends Phaser.Scene {
     }
 
     private changeBorderColor(duration: number = 1): void {
-        let fromColor = Phaser.Display.Color.IntegerToColor(0xffffff);
-        let toColor = Phaser.Display.Color.IntegerToColor(this.players.getTint());
+        let fromColor = Display.Color.IntegerToColor(0xffffff);
+        let toColor = Display.Color.IntegerToColor(this.players.getTint());
         this.tweens.addCounter({
             from: 0,
             to: 100,
             duration: duration,
-            onUpdate: (tween: Phaser.Tweens.Tween) => {
-                let tint = Phaser.Display.Color.Interpolate.ColorWithColor(
+            onUpdate: (tween: Tweens.Tween) => {
+                let tint = Display.Color.Interpolate.ColorWithColor(
                     fromColor,
                     toColor,
                     100,
                     tween.getValue()
                 );
-                let tintColor = Phaser.Display.Color.ObjectToColor(tint).color;
+                let tintColor = Display.Color.ObjectToColor(tint).color;
                 for (let index = 0; index < this.borderTiles.length; ++index) {
                     this.borderTiles[index].tint = tintColor;
                 }
@@ -194,7 +194,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     private activePlayerHasWon(): boolean {
-        let result: { hasWon: boolean, positions: Phaser.Geom.Point[] };
+        let result: { hasWon: boolean, positions: Geom.Point[] };
         let step = 0;
         do {
             switch (step) {
@@ -213,8 +213,8 @@ export class GameScene extends Phaser.Scene {
 
 
         if (result.hasWon) {
-            let tile: Phaser.Tilemaps.Tile;
-            let tilePosition = new Phaser.Geom.Point();
+            let tile: Tilemaps.Tile;
+            let tilePosition = new Geom.Point();
             for (let index = 0; index < result.positions.length; ++index) {
                 tilePosition.x = this.boardRect.x + result.positions[index].x;
                 tilePosition.y = this.boardRect.y + result.positions[index].y;
@@ -226,15 +226,15 @@ export class GameScene extends Phaser.Scene {
         return result.hasWon;
     }
 
-    private checkHorizontal(): { hasWon: boolean, positions: Phaser.Geom.Point[] } {
-        let positions: Phaser.Geom.Point[] = [];
+    private checkHorizontal(): { hasWon: boolean, positions: Geom.Point[] } {
+        let positions: Geom.Point[] = [];
         for (let i = 0; i < 4; ++i) {
-            positions.push(new Phaser.Geom.Point());
+            positions.push(new Geom.Point());
         }
 
         let hasWon = false;
         let count: number;
-        let result: { hasWon: boolean, position: Phaser.Geom.Point, count: number };
+        let result: { hasWon: boolean, position: Geom.Point, count: number };
         for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
             count = 0;
             for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
@@ -248,15 +248,15 @@ export class GameScene extends Phaser.Scene {
         return { hasWon: hasWon, positions: positions };
     }
 
-    private checkVertical(): { hasWon: boolean, positions: Phaser.Geom.Point[] } {
-        let positions: Phaser.Geom.Point[] = [];
+    private checkVertical(): { hasWon: boolean, positions: Geom.Point[] } {
+        let positions: Geom.Point[] = [];
         for (let i = 0; i < 4; ++i) {
-            positions.push(new Phaser.Geom.Point());
+            positions.push(new Geom.Point());
         }
 
         let hasWon = false;
         let count: number;
-        let result: { hasWon: boolean, position: Phaser.Geom.Point, count: number };
+        let result: { hasWon: boolean, position: Geom.Point, count: number };
         for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
             count = 0;
             for (let y = 0; y < this.boardRect.height && !hasWon; ++y) {
@@ -270,16 +270,16 @@ export class GameScene extends Phaser.Scene {
         return { hasWon: hasWon, positions: positions };
     }
 
-    private checkDiagonal(): { hasWon: boolean, positions: Phaser.Geom.Point[] } {
-        let positions: Phaser.Geom.Point[] = [];
+    private checkDiagonal(): { hasWon: boolean, positions: Geom.Point[] } {
+        let positions: Geom.Point[] = [];
         for (let i = 0; i < 4; ++i) {
-            positions.push(new Phaser.Geom.Point());
+            positions.push(new Geom.Point());
         }
 
         let activePlayer = this.players.getActivePlayer();
         let hasWon = false;
         let count: number;
-        let result: { hasWon: boolean, position: Phaser.Geom.Point, count: number };
+        let result: { hasWon: boolean, position: Geom.Point, count: number };
         let currentX: number;
         let currentY: number;
         for (let x = 0; x < this.boardRect.width && !hasWon; ++x) {
@@ -325,8 +325,8 @@ export class GameScene extends Phaser.Scene {
         return { hasWon: hasWon, positions: positions };
     }
 
-    private checkWinningToken(x: number, y: number, count: number): { hasWon: boolean, position: Phaser.Geom.Point, count: number } {
-        let position = new Phaser.Geom.Point();
+    private checkWinningToken(x: number, y: number, count: number): { hasWon: boolean, position: Geom.Point, count: number } {
+        let position = new Geom.Point();
         if (this.tokens[x][y].player === this.players.getActivePlayer()) {
             position.x = x;
             position.y = y;
@@ -338,10 +338,10 @@ export class GameScene extends Phaser.Scene {
         return { hasWon: count == 4, position: position, count: count };
     }
 
-    private moveTile(layer: Phaser.Tilemaps.DynamicTilemapLayer, x: number, y: number, dirX: number, dirY: number, duration: number = 1, complete?: () => void): void {
+    private moveTile(layer: Tilemaps.TilemapLayer, x: number, y: number, dirX: number, dirY: number, duration: number = 1, complete?: () => void): void {
         let tile = layer.getTileAt(x, y);
         if (tile && tile.index >= 0) {
-            let destination = new Phaser.Geom.Point((x + dirX) * tile.width, (y + dirY) * tile.height);
+            let destination = new Geom.Point((x + dirX) * tile.width, (y + dirY) * tile.height);
             this.add.tween({
                 targets: tile,
                 pixelX: destination.x,
